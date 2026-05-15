@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String @id @default(cuid())
+  name      String
+  email     String @unique
+  password  String
+
+  recognitionsGiven Recognition[] @relation("GivenRecognitions")
+  recipients RecognitionRecipient[]
+  reactions Reaction[]
+  comments Comment[]
+
+  createdAt DateTime @default(now())
+}
+
+model Recognition {
+  id        String @id @default(cuid())
+  message   String
+  value     String
+  createdAt DateTime @default(now())
+
+  giverId String
+  giver User @relation("GivenRecognitions", fields: [giverId], references: [id])
+
+  recipients RecognitionRecipient[]
+  reactions Reaction[]
+  comments Comment[]
+}
+
+model RecognitionRecipient {
+  id String @id @default(cuid())
+
+  recognitionId String
+  userId String
+
+  recognition Recognition @relation(fields: [recognitionId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([recognitionId, userId])
+}
+
+model Reaction {
+  id String @id @default(cuid())
+
+  type String
+
+  userId String
+  recognitionId String
+
+  user User @relation(fields: [userId], references: [id])
+
+  recognition Recognition @relation(fields: [recognitionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recognitionId], name: "userId_recognitionId")
+}
+
+model Comment {
+  id String @id @default(cuid())
+
+  body String
+  createdAt DateTime @default(now())
+
+  authorId String
+  recognitionId String
+
+  author User @relation(fields: [authorId], references: [id])
+  recognition Recognition @relation(fields: [recognitionId], references: [id], onDelete: Cascade)
+}
